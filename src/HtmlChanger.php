@@ -21,6 +21,8 @@ class HtmlChanger
             'name' => '',
             'part' => 'Start',
             'attributeChar' => null,
+            'attributeKey' => '',
+            'attributeValue' => '',
             'attributes' => []
         ],
     ];
@@ -188,26 +190,86 @@ class HtmlChanger
                 $part->name .= $char;
                 return;
             } else {
-                $part->state = 'attributes';
+                $part->state = 'attributes.key';
             }
         }
 
-        if($part->state === 'attributes') {
+        if($part->state === 'attributes.key') {
+            if($char === '>') {
+                $this->finishTag();
+                return;
+            }
+            if($char === '=') {
+                $part->state = 'attributes.value';
+                return;
+            } 
+            if($char !== ' ' && $this->getChar(-1) === ' ') {
+                $this->finishAttribute();
+            }
+            $part->attributeKey .= $char;
+            return;
+        }
+
+        if($part->state === 'attributes.value') {
+            if(!$part->attributeChar) {
+                if($char === ' ') {
+                    return;
+                }
+                if ($char === '"' || $char === "'") {
+                    $part->attributeChar = $char;
+                    return;
+                } else {
+                    $part->attributeChar = ' ';
+                }
+            }
             if($part->attributeChar) {
                 if($char === $part->attributeChar) {
                     $part->attributeChar = null;
+                    
+                    $this->finishAttribute();
+                    return;
                 }
-            } elseif ($char === '"' || $char === "'") {
-                $part->attributeChar = $char;
-            } elseif($char === '>') {
-                if(strtolower($part->name) === 'script' && $part->part === 'Start') {
-                    $this->useState(static::$STATE_SCRIPT);
-                } elseif(strtolower($part->name) === 'style' && $part->part === 'Start') {
-                    $this->useState(static::$STATE_STYLE);
-                } else {
-                    $this->useState(static::$STATE_TEXT);
+                if($part->attributeChar === ' ' && $char === '>') {
+                    $this->finishAttribute();
+                    $this->finishTag();
+                    return;
                 }
-            }
+                $part->attributeValue .= $char;
+                return;
+            } 
+        }
+    }
+
+    private function finishAttribute() {
+        $part = end($this->parts);
+        $key = strtolower(trim($part->attributeKey));
+        if(!empty($key)) {
+            $part->attributes[$key] = $part->attributeValue;
+        }
+        $part->attributeKey = '';
+        $part->attributeValue = '';
+        $part->state = 'attributes.key';
+    }
+
+    private function finishTag() {
+        $part = end($this->parts);
+        // use class for tag
+        if($part->part === 'Start') {
+            $tag = new OpeningTag();
+        } else {
+            $tag = new EndingTag();
+        }
+        $tag->name = strtolower($part->name);
+        $tag->code = $part->code;
+        $tag->attributes = $part->attributes;
+        $this->parts[count($this->parts)-1] = $tag;
+
+        if(strtolower($part->name) === 'script' && $part->part === 'Start') {
+            $this->useState(static::$STATE_SCRIPT);
+        } elseif(strtolower($part->name) === 'style' && $part->part === 'Start') {
+            $this->useState(static::$STATE_STYLE);
+        } else {
+            $this->useState(static::$STATE_TEXT);
         }
     }
 
