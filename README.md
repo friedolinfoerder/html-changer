@@ -18,4 +18,7 @@ use html_changer\HtmlChanger
 
 // parse html
 $htmlChanger = new HtmlChanger($html);
+
+// print (original) html code
+print $htmlChanger->html();
 ```
