@@ -1,12 +1,12 @@
 <?php
 
-use html_changer\Html5Changer;
+use html_changer\HtmlChanger;
 
 describe('HtmlChanger', function() {
 
     it("can handle simple code", function() {
         $input = '<div>Text</div>';
-        $htmlChanger = Html5Changer::parse($input);
+        $htmlChanger = HtmlChanger::parse($input);
         $parts = $htmlChanger->parts();
 
         expect(count($parts))->toBe(3);
@@ -18,7 +18,7 @@ describe('HtmlChanger', function() {
 
     it("can handle attributes with greater signs", function() {
         $input = '<div test="yes > no">Text</div>';
-        $htmlChanger = Html5Changer::parse($input);
+        $htmlChanger = HtmlChanger::parse($input);
         $parts = $htmlChanger->parts();
 
         expect(count($parts))->toBe(3);
@@ -31,7 +31,7 @@ describe('HtmlChanger', function() {
 
     it("can distinct between start and end tag", function() {
         $input = '<div>Text</div>';
-        $htmlChanger = Html5Changer::parse($input);
+        $htmlChanger = HtmlChanger::parse($input);
         $parts = $htmlChanger->parts();
 
         expect(count($parts))->toBe(3);
@@ -42,7 +42,7 @@ describe('HtmlChanger', function() {
 
     it("can output the tag name", function() {
         $input = '<div>Text</div>';
-        $htmlChanger = Html5Changer::parse($input);
+        $htmlChanger = HtmlChanger::parse($input);
         $parts = $htmlChanger->parts();
 
         expect(count($parts))->toBe(3);
@@ -54,7 +54,7 @@ describe('HtmlChanger', function() {
     it("can handle scripts", function() {
         $code = 'if(x < y) x++;';
         $input = "<script>$code</script>";
-        $htmlChanger = Html5Changer::parse($input);
+        $htmlChanger = HtmlChanger::parse($input);
         $parts = $htmlChanger->parts();
 
         expect(count($parts))->toBe(3);
@@ -65,7 +65,7 @@ describe('HtmlChanger', function() {
     it("can handle style", function() {
         $code = 'if(x < y) x++;';
         $input = "<script>$code</script>";
-        $htmlChanger = Html5Changer::parse($input);
+        $htmlChanger = HtmlChanger::parse($input);
         $parts = $htmlChanger->parts();
 
         expect(count($parts))->toBe(3);

@@ -3,7 +3,7 @@
 namespace html_changer;
 
 
-class Html5Changer
+class HtmlChanger
 {
     private static $STATE_TEXT = 'Text';
     private static $STATE_TAG = 'Tag';
@@ -40,7 +40,7 @@ class Html5Changer
     }
 
     /**
-     * Parse html code and return Html5Changer instance
+     * Parse html code and return HtmlChanger instance
      *
      * @param $html
      * @return Html5Changer
