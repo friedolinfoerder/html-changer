@@ -1,0 +1,28 @@
+{
+    "name": "friedolinfoerder/html-changer",
+    "description": "Parse html and change it's output",
+    "type": "library",
+    "keywords": ["html","change","manipulate"],
+    "homepage": "https://github.com/friedolinfoerder/html-changer",
+    "authors": [
+        {
+            "name": "Friedolin Förder"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.0"
+    },
+    "require-dev": {
+        "kahlan/kahlan": "^4.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "html_changer\\": "src/",
+            "html_changer\\testing\\": "spec/"
+        }
+    },
+    "scripts": {
+        "test": "kahlan --spec=spec"
+    },
+    "license": "MIT"
+}
