@@ -10,6 +10,23 @@ class HtmlChanger
     private static $STATE_SCRIPT = 'Script';
     private static $STATE_STYLE = 'Style';
 
+    private static $VOID_TAGS = [
+        'area',
+        'base',
+        'br',
+        'col',
+        'embed',
+        'hr',
+        'img',
+        'input',
+        'link',
+        'meta',
+        'param',
+        'source',
+        'track',
+        'wbr',
+    ];
+
     private $defaultData = [
         'Script' => [
             'attributeChar' => null,
@@ -23,7 +40,8 @@ class HtmlChanger
             'attributeChar' => null,
             'attributeKey' => '',
             'attributeValue' => '',
-            'attributes' => []
+            'attributes' => [],
+            'selfclosing' => false
         ],
     ];
 
@@ -203,7 +221,10 @@ class HtmlChanger
                 $part->state = 'attributes.value';
                 return;
             } 
-            if($char !== ' ' && $this->getChar(-1) === ' ') {
+            if($char === '/') {
+                $part->selfclosing = true;
+            }
+            if($char === '/' || $char !== ' ' && $this->getChar(-1) === ' ') {
                 $this->finishAttribute();
             }
             $part->attributeKey .= $char;
@@ -256,6 +277,7 @@ class HtmlChanger
         // use class for tag
         if($part->part === 'Start') {
             $tag = new OpeningTag();
+            $tag->selfclosing = $part->selfclosing || in_array(strtolower($part->name), static::$VOID_TAGS);
         } else {
             $tag = new EndingTag();
         }

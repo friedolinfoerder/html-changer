@@ -72,5 +72,4 @@ describe('HtmlChanger', function() {
         expect($parts[1]->code)->toBe($code);
         expect($htmlChanger->html())->toBe($input);
     });
-
 });
