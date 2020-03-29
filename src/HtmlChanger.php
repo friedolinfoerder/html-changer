@@ -297,15 +297,74 @@ class HtmlChanger
 
     // PUBLIC METHODS
 
-    public function parts($type = null)
+    public function parts($onlyText = false, array $excludeElements = null)
     {
-        if($type) {
-            $type = strtolower($type);
-            return array_values(array_filter($this->parts, function($part) use ($type) {
-                return $part->type === $type;
+        if(!empty($excludeElements)) {
+            $nodes = [];
+            $addNodes = function($children) use(&$nodes, $excludeElements, $onlyText, &$addNodes) {
+                foreach($children as $child) {
+                    $ignore = false;
+                    $type = $child->startNode->type;
+                    if($type === 'tag') {
+                        foreach($excludeElements as $element) {
+                            if($child->startNode->is($element)) {
+                                $ignore = true;
+                                break;
+                            }
+                        }
+                    }
+                    if($ignore) {
+                        continue;
+                    }
+                    if(!$onlyText || $child->startNode->type === 'text') {
+                        $nodes[] = $child->startNode;
+                    }
+                    $addNodes($child->children);
+                    if(!$onlyText && $child->endNode) {
+                        $nodes[] = $child->endNode;
+                    }
+                }
+            };
+            $addNodes($this->tree());
+            return $nodes;
+        }
+        if($onlyText) {
+            return array_values(array_filter($this->parts, function($part) {
+                return $part->type === 'text';
             }));
         }
         return $this->parts;
+    }
+
+    public function tree()
+    {
+        $tree = (object)[
+            'startNode' => null,
+            'endNode' => null,
+            'children' => [],
+            'parent' => null,
+        ];
+        $parent = $tree;
+        foreach ($this->parts as $key => $part) {
+            if($part instanceof EndingTag) {
+                $parent->endNode = $part;
+                if($parent->parent) {
+                    $parent = $parent->parent;
+                }
+                continue;
+            }
+            $obj = (object)[
+                'startNode' => $part,
+                'children' => [],
+                'parent' => $parent,
+            ];
+            $parent->children[] = $obj;
+            if($part instanceof OpeningTag && !$part->isSelfClosing()) {
+                $parent = $obj;
+                continue;
+            }
+        }
+        return $tree->children;
     }
 
     public function html()

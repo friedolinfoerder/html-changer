@@ -33,13 +33,41 @@ class OpeningTag implements HtmlPart {
     }
 
     public function is($selector) {
-        $tag = preg_match('/^\.[^.]+/');
+        $tagMatches = [];
+        preg_match('/^[^.#\[\]]+/', $selector, $tagMatches);
+        $tag = isset($tagMatches[0]) ? $tagMatches[0] : null;
 
-        $name = strtolower($name);
-        if(!array_key_exists($name, $this->attributes)) {
-            return null;
+        if($tag && $tag !== $this->name) {
+            return false;
         }
-        return $this->attributes[$name];
+
+        $idMatches = [];
+        preg_match('/#([^.#\[\]]+)/', $selector, $idMatches);
+        $id = isset($idMatches[1]) ? $idMatches[1] : null;
+
+        if($id && $id !== $this->getAttribute('id')) {
+            return false;
+        }
+
+        $classMatches = [];
+        preg_match_all('/\.([^.#\[\]]+)/', $selector, $classMatches);
+        $requiredClasses = $classMatches[1];
+
+        if(count($requiredClasses) > 0) {
+            $availableClassAttribute = $this->getAttribute('class');
+            if(!$availableClassAttribute) {
+                return false;
+            }
+            $availableClasses = preg_split('/\s+/', $availableClassAttribute);
+            $availableClasses = array_flip($availableClasses);
+            foreach ($requiredClasses as $class) {
+                if(!array_key_exists($class, $availableClasses)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
 }
