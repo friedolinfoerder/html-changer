@@ -43,6 +43,9 @@ class HtmlChanger
             'attributes' => [],
             'selfclosing' => false
         ],
+        'Text' => [
+            'search' => [],
+        ],
     ];
 
     private $currentState;
@@ -51,8 +54,44 @@ class HtmlChanger
     private $chars = [];
     private $index;
 
-    public function __construct($html)
+    /**
+     * Search for exact matches
+     * 
+     * The array is in the following format:
+     * [
+     *  "keyword" => $options
+     * ]
+     */
+    private $searchExact = [];
+
+    /**
+     * Search for case insensitive matches
+     * 
+     * The array is in the following format:
+     * [
+     *  "keyword" => $options
+     * ]
+     */
+    private $searchCaseInsensitive = [];
+
+    private $windowLengths = [];
+
+    public function __construct($html, array $options = [])
     {
+        if(array_key_exists('search', $options)) {
+            $searchCaseInsensitive = [];
+            $searchExact = [];
+            foreach($options['search'] as $key => $value) {
+                if(array_key_exists('caseInsensitive', $value) && $value['caseInsensitive'] === true) {
+                    $searchCaseInsensitive[\mb_strtolower($key)] = $value;
+                } else {
+                    $searchExact[$key] = $value;
+                }
+            }
+            $this->searchCaseInsensitive = $searchCaseInsensitive;
+            $this->searchExact = $searchExact;
+        }
+        $this->setWindowLengths();
         $this->useState(static::$STATE_TEXT);
         $this->html = $html;
         $this->setChars($html);
@@ -62,12 +101,30 @@ class HtmlChanger
     /**
      * Parse html code and return HtmlChanger instance
      *
-     * @param $html
+     * @param string $html
+     * @param array $options 
+     *                  ['search']
      * @return Html5Changer
      */
-    public static function parse($html)
+    public static function parse($html, array $options = [])
     {
-        return new static($html);
+        return new static($html, $options);
+    }
+
+    private function setWindowLengths()
+    {
+        $windows = [];
+        foreach ($this->searchExact as $key => $value) {
+            $length = \strlen($key);
+            $windows[$length] = true;
+        }
+        foreach ($this->searchCaseInsensitive as $key => $value) {
+            $length = \strlen($key);
+            $windows[$length] = true;
+        }
+        $windows = array_keys($windows);
+        \rsort($windows);
+        $this->windowLengths = $windows;
     }
 
     private function getChar($relativePosition = 0)
@@ -76,7 +133,8 @@ class HtmlChanger
         return isset($this->chars[$index]) ? $this->chars[$index] : null;
     }
 
-    private function nextchar($string, &$pointer){
+    private function nextchar($string, &$pointer)
+    {
         if(!isset($string[$pointer])) return false;
         $char = ord($string[$pointer]);
         if($char < 128){
@@ -93,7 +151,7 @@ class HtmlChanger
             }else{
                 $bytes = 6;
             }
-            $str =  substr($string, $pointer, $bytes);
+            $str = substr($string, $pointer, $bytes);
             $pointer += $bytes;
             return $str;
         }
@@ -179,11 +237,58 @@ class HtmlChanger
     private function handleCharInStateText($char)
     {
         if($char === '<') {
+            $this->finishText();
             $this->useState(static::$STATE_TAG);
             $this->handleChar($char);
             return;
         }
         $this->consumeChar($char);
+        // find keywords in text
+        // todo use $searchExact and $searchCaseInsensitive to find relevant text
+        $part = end($this->parts);
+        $searchResult = null;
+
+        $wordCharacters = 'abcdefghijklmnopqrstuvwxyzäöüß1234567890';
+
+        foreach ($this->windowLengths as $len) {
+            $partLength = strlen($part->code);
+            if($partLength < $len) {
+                continue;
+            }
+            $searchTerm = substr($part->code, -$len);
+
+            $followingChar = mb_strtolower($this->getChar(1));
+            $wordBounder = $followingChar === null || strpos($wordCharacters, $followingChar) === false;
+
+            if(!$wordBounder) {
+                break;
+            }
+
+            $previousChar = $partLength - $len > 0 ? mb_strtolower($part->code[$partLength-$len-1]) : null;
+            $wordBounder = $previousChar === null || strpos($wordCharacters, $previousChar) === false;
+
+            if(!$wordBounder) {
+                continue;
+            }
+
+            // search in exact list
+            if(array_key_exists($searchTerm, $this->searchExact)) {
+                $searchResult = [$searchTerm, [$partLength - $len, $len], $this->searchExact[$searchTerm]['value']];
+                break;
+            }
+        
+            // search in case insensitive list
+            $searchTermLower = \mb_strtolower($searchTerm);
+            if(array_key_exists($searchTermLower, $this->searchCaseInsensitive)) {
+                $searchResult = [$searchTerm, [$partLength - $len, $len], $this->searchCaseInsensitive[$searchTermLower]['value']];
+                break;
+            }
+        }
+
+        // add search result to current state
+        if($searchResult) {
+            $part->search[] = $searchResult;
+        }
     }
 
     private function handleCharInStateTag($char)
@@ -259,6 +364,14 @@ class HtmlChanger
                 return;
             } 
         }
+    }
+
+    private function finishText() {
+        $part = end($this->parts);
+        $text = new Text();
+        $text->code = $part->code;
+        $text->search = $part->search;
+        $this->parts[count($this->parts)-1] = $text;
     }
 
     private function finishAttribute() {
