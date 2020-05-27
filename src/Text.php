@@ -17,9 +17,11 @@ class Text implements HtmlPart {
     }
 
     public function replace(callable $replacer) {
-        $list = array_reverse($this->search);
-        foreach ($list as $value) {
-            $newText = $replacer($value[0], $value[2]);
+        usort($this->search, function($a, $b) {
+            return $b[1][0] - $a[1][0];
+        });
+        foreach ($this->search as $value) {
+            $newText = call_user_func($replacer, $value[0], $value[2]);
             $this->code = \substr($this->code, 0, $value[1][0]) . $newText . \substr($this->code, $value[1][0] + $value[1][1]);
         }
 

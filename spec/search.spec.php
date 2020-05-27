@@ -42,4 +42,19 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div>Ändern/Change oder unterstützen/Support</div>');
     });
 
+    it("can use longer replacement", function() {
+        $input = "<div>Ändern oder unterstützen</div>";
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'ändern' => ['value' => 'Change', 'caseInsensitive' => true],
+            'Ändern oder unterstützen' => ['value' => 'Support', 'caseInsensitive' => true],
+        ]]);
+        $elements = $htmlChanger->parts(true);
+
+        $elements[0]->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>[Ändern oder unterstützen]</div>');
+    });
+
 });

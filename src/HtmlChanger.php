@@ -370,7 +370,32 @@ class HtmlChanger
         $part = end($this->parts);
         $text = new Text();
         $text->code = $part->code;
-        $text->search = $part->search;
+
+        // find overlays and use longer text
+        usort($part->search, function($a, $b) {
+            return $b[1][1] - $a[1][1];
+        });
+
+        $search = [];
+        foreach($part->search as $index => $textBlock) {
+            $collission = false;
+
+            // check if there is an collission with other part
+            for ($i=0; $i < $index; $i++) { 
+                $otherTextBlock = $part->search[$i];
+                if($textBlock[1][0] < $otherTextBlock[1][0] + $otherTextBlock[1][1] && $textBlock[1][0] + $textBlock[1][1] > $otherTextBlock[1][0]) {
+                    $collission = true;
+                    break;
+                }
+            }
+
+            if(!$collission) {
+                $search[] = $textBlock;
+            }
+        }
+
+
+        $text->search = $search;
         $this->parts[count($this->parts)-1] = $text;
     }
 
