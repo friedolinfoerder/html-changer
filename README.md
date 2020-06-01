@@ -19,6 +19,14 @@ use html_changer\HtmlChanger
 // parse html
 $htmlChanger = new HtmlChanger($html);
 
+// search and replace text
+$htmlChanger = new HtmlChanger($text, [
+    'test' => ['value' => 'TEST', 'caseInsensitive' => false, 'wordBoundary' => true],
+]);
+$htmlChanger->replace(function ($text, $value) {
+    return $text . '/' . $value;
+});
+
 // print (original) html code
 print $htmlChanger->html();
 ```

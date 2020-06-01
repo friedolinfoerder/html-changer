@@ -256,31 +256,46 @@ class HtmlChanger
                 continue;
             }
             $searchTerm = substr($part->code, -$len);
+            $searchObject = null;
 
-            $followingChar = mb_strtolower($this->getChar(1));
-            $wordBounder = $followingChar === null || strpos($wordCharacters, $followingChar) === false;
-
-            if(!$wordBounder) {
-                break;
-            }
-
-            $previousChar = $partLength - $len > 0 ? mb_strtolower($part->code[$partLength-$len-1]) : null;
-            $wordBounder = $previousChar === null || strpos($wordCharacters, $previousChar) === false;
-
-            if(!$wordBounder) {
-                continue;
-            }
-
+            
             // search in exact list
             if(array_key_exists($searchTerm, $this->searchExact)) {
-                $searchResult = [$searchTerm, [$partLength - $len, $len], $this->searchExact[$searchTerm]['value']];
-                break;
+                $searchObject = $this->searchExact[$searchTerm];
+                $searchResult = [$searchTerm, [$partLength - $len, $len], $searchObject['value']];
+            } else {
+                // search in case insensitive list
+                $searchTermLower = \mb_strtolower($searchTerm);
+                if(array_key_exists($searchTermLower, $this->searchCaseInsensitive)) {
+                    $searchObject = $this->searchCaseInsensitive[$searchTermLower];
+                    $searchResult = [$searchTerm, [$partLength - $len, $len], $searchObject['value']];
+                }
             }
         
-            // search in case insensitive list
-            $searchTermLower = \mb_strtolower($searchTerm);
-            if(array_key_exists($searchTermLower, $this->searchCaseInsensitive)) {
-                $searchResult = [$searchTerm, [$partLength - $len, $len], $this->searchCaseInsensitive[$searchTermLower]['value']];
+            if($searchResult) {
+                if(array_key_exists('wordBoundary', $searchObject) && $searchObject['wordBoundary'] === false) {
+                    break;
+                }
+
+                $followingChar = mb_strtolower($this->getChar(1));
+                $wordBounder = $followingChar === null || strpos($wordCharacters, $followingChar) === false;
+                
+                if(!$wordBounder) {
+                    $searchObject = null;
+                    $searchResult = null;
+                    continue;
+                }
+                
+                $previousChar = $partLength - $len > 0 ? mb_strtolower($part->code[$partLength-$len-1]) : null;
+                $wordBounder = $previousChar === null || strpos($wordCharacters, $previousChar) === false;
+                
+                if(!$wordBounder) {
+                    $searchObject = null;
+                    $searchResult = null;
+                    continue;
+                }
+
+                // has word boundary on both sides
                 break;
             }
         }

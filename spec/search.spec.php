@@ -57,4 +57,32 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div>[Ändern oder unterstützen]</div>');
     });
 
+    it("can use word boundaries", function() {
+        $input = "<div>Ändern oder unterstützen</div>";
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'er' => ['value' => 'Test'],
+        ]]);
+        $elements = $htmlChanger->parts(true);
+
+        $elements[0]->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>Ändern oder unterstützen</div>');
+    });
+
+    it("can use word boundaries", function() {
+        $input = "<div>Ändern oder unterstützen</div>";
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'er' => ['value' => 'Test', 'wordBoundary' => false],
+        ]]);
+        $elements = $htmlChanger->parts(true);
+
+        $elements[0]->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>Änd[er]n od[er] unt[er]stützen</div>');
+    });
+
 });
