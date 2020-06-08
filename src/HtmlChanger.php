@@ -54,6 +54,8 @@ class HtmlChanger
     private $chars = [];
     private $index;
 
+    private $groups = [];
+
     /**
      * Search for exact matches
      * 
@@ -82,7 +84,8 @@ class HtmlChanger
             $searchCaseInsensitive = [];
             $searchExact = [];
             foreach($options['search'] as $key => $value) {
-                if(array_key_exists('caseInsensitive', $value) && $value['caseInsensitive'] === true) {
+                $value = array_merge(['group' => $key, 'maxCount' => -1, 'caseInsensitive' => false], $value);
+                if($value['caseInsensitive']) {
                     $searchCaseInsensitive[\mb_strtolower($key)] = $value;
                 } else {
                     $searchExact[$key] = $value;
@@ -296,6 +299,25 @@ class HtmlChanger
                 }
 
                 // has word boundary on both sides
+                $group = $searchObject['group'];
+                if($searchObject['maxCount'] > 0) {
+                    if(!array_key_exists($group, $this->groups)) {
+                        $this->groups[$group] = 0;
+                    }
+                    $this->groups[$group] += 1;
+                    if($this->groups[$group] >= $searchObject['maxCount']) {
+                        foreach ($this->searchExact as $term => $searchConfig) {
+                            if($searchConfig['group'] === $group) {
+                                unset($this->searchExact[$term]);
+                            }
+                        }
+                        foreach ($this->searchCaseInsensitive as $term => $searchConfig) {
+                            if($searchConfig['group'] === $group) {
+                                unset($this->searchCaseInsensitive[$term]);
+                            }
+                        }
+                    }
+                }
                 break;
             }
         }
