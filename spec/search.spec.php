@@ -114,4 +114,31 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div>[und] oder und</div>');
     });
 
+    it('can ignore certain elements', function() {
+        $input = "<div>Das ist ein Test</div>";
+        $htmlChanger = HtmlChanger::parse($input, ['ignore' => ['div'], 'search' => [
+            'Test' => ['value' => 'Test'],
+        ]]);
+        $elements = $htmlChanger->parts(true);
+
+        $elements[0]->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>Das ist ein Test</div>');
+    });
+
+    it('can ignore nested elements', function() {
+        $input = '<div>Das ist ein Test im <div class="ignored">Test</div></div>';
+        $htmlChanger = HtmlChanger::parse($input, ['ignore' => ['.ignored'], 'search' => [
+            'Test' => ['value' => 'Test'],
+        ]]);
+
+        $htmlChanger->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>Das ist ein [Test] im <div class="ignored">Test</div></div>');
+    });
+
 });

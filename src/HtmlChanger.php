@@ -56,6 +56,11 @@ class HtmlChanger
 
     private $groups = [];
 
+    private $tree = null;
+    private $parent = null;
+    private $ignore = [];
+    private $ignoreStack = [];
+
     /**
      * Search for exact matches
      * 
@@ -80,6 +85,16 @@ class HtmlChanger
 
     public function __construct($html, array $options = [])
     {
+        $this->tree = (object)[
+            'startNode' => null,
+            'endNode' => null,
+            'children' => [],
+            'parent' => null,
+        ];
+        $this->parent = $this->tree;
+        if(array_key_exists('ignore', $options)) {
+            $this->ignore = $options['ignore'];
+        }
         if(array_key_exists('search', $options)) {
             $searchCaseInsensitive = [];
             $searchExact = [];
@@ -205,6 +220,36 @@ class HtmlChanger
 
     private function useState($state)
     {
+        if(!empty($this->parts)) {
+            $part = end($this->parts);
+            if($part instanceof EndingTag) {
+                $this->parent->endNode = $part;
+                if($this->parent->parent) {
+                    $this->parent = $this->parent->parent;
+                }
+                \array_pop($this->ignoreStack);
+            } else {
+                $obj = (object)[
+                    'startNode' => $part,
+                    'children' => [],
+                    'parent' => $this->parent,
+                ];
+                $this->parent->children[] = $obj;
+                if($part instanceof OpeningTag && !$part->isSelfClosing()) {
+                    $this->parent = $obj;
+                    if(empty($this->ignoreStack)) {
+                        foreach($this->ignore as $element) {
+                            if($part->is($element)) {
+                                $this->ignoreStack[] = $part;
+                                break;
+                            }
+                        }
+                    } else {
+                        $this->ignoreStack[] = $part;
+                    }
+                }
+            }
+        }
         $this->currentState = $state;
         $this->parts[] = (object)array_merge([
             'type' => strtolower($this->currentState),
@@ -247,7 +292,9 @@ class HtmlChanger
         }
         $this->consumeChar($char);
         // find keywords in text
-        // todo use $searchExact and $searchCaseInsensitive to find relevant text
+        if(!empty($this->ignoreStack)) {
+            return;
+        }
         $part = end($this->parts);
         $searchResult = null;
 
@@ -276,26 +323,26 @@ class HtmlChanger
             }
         
             if($searchResult) {
-                if(array_key_exists('wordBoundary', $searchObject) && $searchObject['wordBoundary'] === false) {
-                    break;
-                }
+                $ignoreWordBoundary = array_key_exists('wordBoundary', $searchObject) && $searchObject['wordBoundary'] === false;
 
-                $followingChar = mb_strtolower($this->getChar(1));
-                $wordBounder = $followingChar === null || strpos($wordCharacters, $followingChar) === false;
-                
-                if(!$wordBounder) {
-                    $searchObject = null;
-                    $searchResult = null;
-                    continue;
-                }
-                
-                $previousChar = $partLength - $len > 0 ? mb_strtolower($part->code[$partLength-$len-1]) : null;
-                $wordBounder = $previousChar === null || strpos($wordCharacters, $previousChar) === false;
-                
-                if(!$wordBounder) {
-                    $searchObject = null;
-                    $searchResult = null;
-                    continue;
+                if(!$ignoreWordBoundary) {
+                    $followingChar = mb_strtolower($this->getChar(1));
+                    $wordBounder = $followingChar === null || strpos($wordCharacters, $followingChar) === false;
+                    
+                    if(!$wordBounder) {
+                        $searchObject = null;
+                        $searchResult = null;
+                        continue;
+                    }
+                    
+                    $previousChar = $partLength - $len > 0 ? mb_strtolower($part->code[$partLength-$len-1]) : null;
+                    $wordBounder = $previousChar === null || strpos($wordCharacters, $previousChar) === false;
+                    
+                    if(!$wordBounder) {
+                        $searchObject = null;
+                        $searchResult = null;
+                        continue;
+                    }
                 }
 
                 // has word boundary on both sides
@@ -540,6 +587,13 @@ class HtmlChanger
             }
         }
         return $tree->children;
+    }
+
+    public function replace(callable $callable) {
+        $parts = $this->parts(true);
+        foreach($parts as $part) {
+            $part->replace($callable);
+        }
     }
 
     public function html()
