@@ -21,12 +21,28 @@ $htmlChanger = new HtmlChanger($html);
 
 // search and replace text
 $htmlChanger = new HtmlChanger($text, [
-    'test' => ['value' => 'TEST', 'caseInsensitive' => false, 'wordBoundary' => true],
+    'search' => [
+        'test' => [
+            'value' => 'TEST', 
+            'caseInsensitive' => false, // default false
+            'wordBoundary' => true, // default true
+            'group' => 1, // default is the key (here 'test') 
+            'maxCount' => 3, // default -1, means no rescriction
+        ]
+    ],
+    'ignore' => [
+        'b',
+        'h1',
+        'h2',
+        'a',
+        '.ignored',
+        '#ad',
+    ]
 ]);
 $htmlChanger->replace(function ($text, $value) {
     return $text . '/' . $value;
 });
 
-// print (original) html code
+// print html code
 print $htmlChanger->html();
 ```

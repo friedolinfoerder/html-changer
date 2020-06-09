@@ -594,6 +594,7 @@ class HtmlChanger
         foreach($parts as $part) {
             $part->replace($callable);
         }
+        return $this;
     }
 
     public function html()
