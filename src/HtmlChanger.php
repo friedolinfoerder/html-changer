@@ -201,6 +201,10 @@ class HtmlChanger
         $this->parts = array_values(array_filter($this->parts, function($part) {
             return $part->code !== '';
         }));
+        $lastPart = end($this->parts);
+        if($lastPart->type === 'text') {
+            $this->finishText();
+        }
 
         // fluent interface
         return $this;

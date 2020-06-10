@@ -1,8 +1,34 @@
 <?php
 
 use html_changer\HtmlChanger;
+use html_changer\Text;
 
 describe('HtmlChanger', function() {
+
+    it("can handle only text", function() {
+        $input = 'Text';
+        $htmlChanger = HtmlChanger::parse($input);
+        $parts = $htmlChanger->parts();
+
+        expect(count($parts))->toBe(1);
+        expect($parts[0]->type)->toBe('text');
+        expect($parts[0])->toBeAnInstanceOf('html_changer\\Text');
+        expect($htmlChanger->html())->toBe($input);
+    });
+
+    it("can handle rich text", function() {
+        $input = 'Text with <b>html</b> elements.';
+        $htmlChanger = HtmlChanger::parse($input);
+        $parts = $htmlChanger->parts();
+
+        expect(count($parts))->toBe(5);
+        expect($parts[0])->toBeAnInstanceOf('html_changer\\Text');
+        expect($parts[1])->toBeAnInstanceOf('html_changer\\OpeningTag');
+        expect($parts[2])->toBeAnInstanceOf('html_changer\\Text');
+        expect($parts[3])->toBeAnInstanceOf('html_changer\\EndingTag');
+        expect($parts[4])->toBeAnInstanceOf('html_changer\\Text');
+        expect($htmlChanger->html())->toBe($input);
+    });
 
     it("can handle simple code", function() {
         $input = '<div>Text</div>';
