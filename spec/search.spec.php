@@ -141,6 +141,19 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div>Das ist ein [Test] im <div class="ignored">Test</div></div>');
     });
 
+    it('can ignore all', function() {
+        $input = '<div class="ignored">Test</div>';
+        $htmlChanger = HtmlChanger::parse($input, ['ignore' => ['.ignored'], 'search' => [
+            'Test' => ['value' => 'Test'],
+        ]]);
+
+        $htmlChanger->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div class="ignored">Test</div>');
+    });
+
     // it('can replace persian words', function() {
     //     $input = 'اپلیکیشن';
     //     $htmlChanger = HtmlChanger::parse($input, ['search' => [

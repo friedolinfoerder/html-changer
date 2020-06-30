@@ -98,4 +98,13 @@ describe('HtmlChanger', function() {
         expect($parts[1]->code)->toBe($code);
         expect($htmlChanger->html())->toBe($input);
     });
+
+    it("can handle empty input", function() {
+        $input = "";
+        $htmlChanger = HtmlChanger::parse($input);
+        $parts = $htmlChanger->parts();
+
+        expect(count($parts))->toBe(0);
+        expect($htmlChanger->html())->toBe($input);
+    });
 });

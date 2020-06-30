@@ -202,7 +202,7 @@ class HtmlChanger
             return $part->code !== '';
         }));
         $lastPart = end($this->parts);
-        if($lastPart->type === 'text') {
+        if(!empty($lastPart) && $lastPart->type === 'text') {
             $this->finishText();
         }
 
