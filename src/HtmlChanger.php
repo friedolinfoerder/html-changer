@@ -331,7 +331,7 @@ class HtmlChanger
 
                 if(!$ignoreWordBoundary) {
                     $followingChar = mb_strtolower($this->getChar(1));
-                    $wordBounder = $followingChar === null || strpos($wordCharacters, $followingChar) === false;
+                    $wordBounder = empty($followingChar) || strpos($wordCharacters, $followingChar) === false;
                     
                     if(!$wordBounder) {
                         $searchObject = null;

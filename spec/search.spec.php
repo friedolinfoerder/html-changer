@@ -141,4 +141,31 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div>Das ist ein [Test] im <div class="ignored">Test</div></div>');
     });
 
+    // it('can replace persian words', function() {
+    //     $input = 'اپلیکیشن';
+    //     $htmlChanger = HtmlChanger::parse($input, ['search' => [
+    //         'کیشن' => ['value' => 'Test', 'wordBoundary' => true],
+    //     ]]);
+
+    //     $htmlChanger->replace(function($text, $value) {
+    //         return '[' . $text . ']';
+    //     });
+
+    //     expect($htmlChanger->html())->toBe('[اپلی[کیشن');
+    // });
+
+    it('can replace polish words', function() {
+        $input = '<p>superwszechświatów</p><p>Jetzt das polnische Wort superwszechświat </p>';
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'superwszechświatów' => ['value' => 'Test'],
+            'superwszechświat' => ['value' => 'Test'],
+        ]]);
+
+        $htmlChanger->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<p>[superwszechświatów]</p><p>Jetzt das polnische Wort [superwszechświat] </p>');
+    });
+
 });
