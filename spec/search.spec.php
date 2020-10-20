@@ -57,6 +57,21 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div>[Ändern oder unterstützen]</div>');
     });
 
+    it("can use longer replacement with maxCount 1", function() {
+        $input = "<div>Ändern oder unterstützen</div>";
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'ändern' => ['value' => 'Change', 'caseInsensitive' => true, 'maxCount' => 1, 'group' => '1'],
+            'Ändern oder unterstützen' => ['value' => 'Support', 'caseInsensitive' => true, 'maxCount' => 1, 'group' => '1'],
+        ]]);
+        $elements = $htmlChanger->parts(true);
+
+        $elements[0]->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>[Ändern oder unterstützen]</div>');
+    });
+
     it("can use word boundaries", function() {
         $input = "<div>Ändern oder unterstützen</div>";
         $htmlChanger = HtmlChanger::parse($input, ['search' => [
@@ -111,7 +126,22 @@ describe('HtmlChanger', function() {
             return '[' . $text . ']';
         });
 
-        expect($htmlChanger->html())->toBe('<div>[und] oder und</div>');
+        expect($htmlChanger->html())->toBe('<div>und [oder] und</div>');
+    });
+
+    it("can handle max count with groups and multiple elements", function() {
+        $input = "<div>und<span>oder</span>und</div>";
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'und' => ['value' => 'Test', 'maxCount' => 1, 'group' => 1],
+            'oder' => ['value' => 'Test', 'maxCount' => 1, 'group' => 1],
+        ]]);
+        $elements = $htmlChanger->parts(true);
+
+        $elements[0]->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>[und]<span>oder</span>und</div>');
     });
 
     it('can ignore certain elements', function() {

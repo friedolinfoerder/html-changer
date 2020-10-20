@@ -316,13 +316,13 @@ class HtmlChanger
             // search in exact list
             if(array_key_exists($searchTerm, $this->searchExact)) {
                 $searchObject = $this->searchExact[$searchTerm];
-                $searchResult = [$searchTerm, [$partLength - $len, $len], $searchObject['value']];
+                $searchResult = [$searchTerm, [$partLength - $len, $len], $searchObject];
             } else {
                 // search in case insensitive list
                 $searchTermLower = \mb_strtolower($searchTerm);
                 if(array_key_exists($searchTermLower, $this->searchCaseInsensitive)) {
                     $searchObject = $this->searchCaseInsensitive[$searchTermLower];
-                    $searchResult = [$searchTerm, [$partLength - $len, $len], $searchObject['value']];
+                    $searchResult = [$searchTerm, [$partLength - $len, $len], $searchObject];
                 }
             }
         
@@ -356,18 +356,6 @@ class HtmlChanger
                         $this->groups[$group] = 0;
                     }
                     $this->groups[$group] += 1;
-                    if($this->groups[$group] >= $searchObject['maxCount']) {
-                        foreach ($this->searchExact as $term => $searchConfig) {
-                            if($searchConfig['group'] === $group) {
-                                unset($this->searchExact[$term]);
-                            }
-                        }
-                        foreach ($this->searchCaseInsensitive as $term => $searchConfig) {
-                            if($searchConfig['group'] === $group) {
-                                unset($this->searchCaseInsensitive[$term]);
-                            }
-                        }
-                    }
                 }
                 break;
             }
@@ -464,6 +452,20 @@ class HtmlChanger
             return $b[1][1] - $a[1][1];
         });
 
+        $part->search = array_reverse($part->search);
+        foreach($part->search as $index => $textBlock) {
+            $group = $textBlock[2]['group'];
+            $maxCount = $textBlock[2]['maxCount'];
+            if($maxCount === -1) {
+                continue;
+            }
+            if($this->groups[$group] > $maxCount) {
+                $this->groups[$group]--;
+                unset($part->search[$index]);
+            }
+        }
+        $part->search = array_reverse($part->search);
+
         $search = [];
         foreach($part->search as $index => $textBlock) {
             $collission = false;
@@ -485,6 +487,28 @@ class HtmlChanger
 
         $text->search = $search;
         $this->parts[count($this->parts)-1] = $text;
+
+        // remove groups
+        foreach ($this->searchExact as $term => $searchConfig) {
+            if($searchConfig['maxCount'] === -1) {
+                continue;
+            }
+            $groupName = $searchConfig['group'];
+            $group = array_key_exists($groupName, $this->groups) ? $this->groups[$groupName] : 0;
+            if($group >= $searchConfig['maxCount']) {
+                unset($this->searchExact[$term]);
+            }
+        }
+        foreach ($this->searchCaseInsensitive as $term => $searchConfig) {
+            if($searchConfig['maxCount'] === -1) {
+                continue;
+            }
+            $groupName = $searchConfig['group'];
+            $group = array_key_exists($groupName, $this->groups) ? $this->groups[$groupName] : 0;
+            if($group >= $searchConfig['maxCount']) {
+                unset($this->searchCaseInsensitive[$term]);
+            }
+        }
     }
 
     private function finishAttribute() {

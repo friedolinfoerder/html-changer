@@ -21,7 +21,7 @@ class Text implements HtmlPart {
             return $b[1][0] - $a[1][0];
         });
         foreach ($this->search as $value) {
-            $newText = call_user_func($replacer, $value[0], $value[2]);
+            $newText = call_user_func($replacer, $value[0], $value[2]['value']);
             $this->code = \substr($this->code, 0, $value[1][0]) . $newText . \substr($this->code, $value[1][0] + $value[1][1]);
         }
 
