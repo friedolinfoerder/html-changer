@@ -57,7 +57,7 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div>[Ändern oder unterstützen]</div>');
     });
 
-    it("can overwrite sorting via priority", function() {
+    it("can overwrite sorting via priority (1)", function() {
         $input = "<div>Ändern oder unterstützen</div>";
         $htmlChanger = HtmlChanger::parse($input, ['search' => [
             'ändern' => ['value' => 'Change', 'caseInsensitive' => true, 'priority' => 1],
@@ -70,6 +70,21 @@ describe('HtmlChanger', function() {
         });
 
         expect($htmlChanger->html())->toBe('<div>[Ändern] oder unterstützen</div>');
+    });
+
+    it("can overwrite sorting via priority (2)", function() {
+        $input = "<div>Ändern oder unterstützen</div>";
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'unterstützen' => ['value' => 'Change', 'caseInsensitive' => true, 'priority' => 1],
+            'Ändern oder unterstützen' => ['value' => 'Support', 'caseInsensitive' => true],
+        ]]);
+        $elements = $htmlChanger->parts(true);
+
+        $elements[0]->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>Ändern oder [unterstützen]</div>');
     });
 
     it("can use longer replacement with maxCount 1", function() {

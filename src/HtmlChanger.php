@@ -362,13 +362,11 @@ class HtmlChanger
                     }
                     $this->groups[$group] += 1;
                 }
-                break;
+                // add search result to current state
+                $part->search[] = $searchResult;
+                $searchObject = null;
+                $searchResult = null;
             }
-        }
-
-        // add search result to current state
-        if($searchResult) {
-            $part->search[] = $searchResult;
         }
     }
 
