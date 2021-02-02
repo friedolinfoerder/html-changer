@@ -99,7 +99,12 @@ class HtmlChanger
             $searchCaseInsensitive = [];
             $searchExact = [];
             foreach($options['search'] as $key => $value) {
-                $value = array_merge(['group' => $key, 'maxCount' => -1, 'caseInsensitive' => false], $value);
+                $value = array_merge([
+                    'group' => $key, 
+                    'maxCount' => -1, 
+                    'caseInsensitive' => false, 
+                    'priority' => 0,
+                ], $value);
                 if($value['caseInsensitive']) {
                     $searchCaseInsensitive[\mb_strtolower($key)] = $value;
                 } else {
@@ -449,6 +454,10 @@ class HtmlChanger
 
         // find overlays and use longer text
         usort($part->search, function($a, $b) {
+            $prioritySort = $b[2]['priority'] - $a[2]['priority'];
+            if($prioritySort != 0) {
+                return $prioritySort;
+            }
             return $b[1][1] - $a[1][1];
         });
 
