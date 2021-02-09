@@ -102,7 +102,7 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div>[Ändern oder unterstützen]</div>');
     });
 
-    it("can use word boundaries", function() {
+    it("can use word boundaries (1)", function() {
         $input = "<div>Ändern oder unterstützen</div>";
         $htmlChanger = HtmlChanger::parse($input, ['search' => [
             'er' => ['value' => 'Test'],
@@ -116,7 +116,7 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div>Ändern oder unterstützen</div>');
     });
 
-    it("can use word boundaries", function() {
+    it("can use word boundaries (2)", function() {
         $input = "<div>Ändern oder unterstützen</div>";
         $htmlChanger = HtmlChanger::parse($input, ['search' => [
             'er' => ['value' => 'Test', 'wordBoundary' => false],
@@ -128,6 +128,35 @@ describe('HtmlChanger', function() {
         });
 
         expect($htmlChanger->html())->toBe('<div>Änd[er]n od[er] unt[er]stützen</div>');
+    });
+
+    it("can use word boundaries (3)", function() {
+        $input = "<div>germanų</div>";
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'german' => ['value' => 'german', 'wordBoundary' => true],
+        ]]);
+        $elements = $htmlChanger->parts(true);
+
+        $elements[0]->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>germanų</div>');
+    });
+
+    it("can use word boundaries (4)", function() {
+        $input = "<div>Some random ąčšū, čšū.</div>";
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'ąčšū' => ['value' => 'german', 'wordBoundary' => true],
+            'čš' => ['value' => 'german', 'wordBoundary' => true],
+            ]]);
+        $elements = $htmlChanger->parts(true);
+
+        $elements[0]->replace(function($text, $value) {
+            return '[' . $text . ']';
+        });
+
+        expect($htmlChanger->html())->toBe('<div>Some random [ąčšū], čšū.</div>');
     });
 
     it("can handle max count", function() {

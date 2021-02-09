@@ -307,8 +307,6 @@ class HtmlChanger
         $part = end($this->parts);
         $searchResult = null;
 
-        $wordCharacters = 'abcdefghijklmnopqrstuvwxyzäöüß1234567890';
-
         foreach ($this->windowLengths as $len) {
             $partLength = strlen($part->code);
             if($partLength < $len) {
@@ -333,10 +331,10 @@ class HtmlChanger
         
             if($searchResult) {
                 $ignoreWordBoundary = array_key_exists('wordBoundary', $searchObject) && $searchObject['wordBoundary'] === false;
-
+                
                 if(!$ignoreWordBoundary) {
                     $followingChar = mb_strtolower($this->getChar(1));
-                    $wordBounder = empty($followingChar) || strpos($wordCharacters, $followingChar) === false;
+                    $wordBounder = empty($followingChar) || preg_match("/^\W$/u", $followingChar);
                     
                     if(!$wordBounder) {
                         $searchObject = null;
@@ -345,7 +343,7 @@ class HtmlChanger
                     }
                     
                     $previousChar = $partLength - $len > 0 ? mb_strtolower($part->code[$partLength-$len-1]) : null;
-                    $wordBounder = $previousChar === null || strpos($wordCharacters, $previousChar) === false;
+                    $wordBounder = empty($previousChar) || preg_match("/^\W$/u", $previousChar);
                     
                     if(!$wordBounder) {
                         $searchObject = null;
@@ -353,7 +351,7 @@ class HtmlChanger
                         continue;
                     }
                 }
-
+                
                 // has word boundary on both sides
                 $group = $searchObject['group'];
                 if($searchObject['maxCount'] > 0) {
