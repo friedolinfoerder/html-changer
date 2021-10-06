@@ -8,6 +8,7 @@ class EndingTag implements HtmlPart {
     public $name = '';
     public $part = 'End';
     public $code = '';
+    public $parent = null;
 
     public function getType() {
         return $this->type;
@@ -15,6 +16,10 @@ class EndingTag implements HtmlPart {
 
     public function getCode() {
         return $this->code;
+    }
+
+    public function getParent() {
+        return $this->parent;
     }
 
 }

@@ -61,6 +61,8 @@ class HtmlChanger
     private $ignore = [];
     private $ignoreStack = [];
 
+    private $stack = [];
+
     /**
      * Search for exact matches
      * 
@@ -94,6 +96,9 @@ class HtmlChanger
         $this->parent = $this->tree;
         if(array_key_exists('ignore', $options)) {
             $this->ignore = $options['ignore'];
+        }
+        if(array_key_exists('only', $options)) {
+            $this->only = $options['only'];
         }
         if(array_key_exists('search', $options)) {
             $searchCaseInsensitive = [];
@@ -446,6 +451,7 @@ class HtmlChanger
     private function finishText() {
         $part = end($this->parts);
         $text = new Text();
+        $text->parent = end($this->stack);
         $text->code = $part->code;
 
         // find overlays and use longer text
@@ -533,8 +539,13 @@ class HtmlChanger
         if($part->part === 'Start') {
             $tag = new OpeningTag();
             $tag->selfclosing = $part->selfclosing || in_array(strtolower($part->name), static::$VOID_TAGS);
+            if(!$tag->isSelfClosing()) {
+                $tag->parent = end($this->stack);
+                $this->stack[] = $tag;
+            }
         } else {
             $tag = new EndingTag();
+            array_pop($this->stack);
         }
         $tag->name = strtolower($part->name);
         $tag->code = $part->code;

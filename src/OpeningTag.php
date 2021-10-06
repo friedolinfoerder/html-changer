@@ -9,6 +9,7 @@ class OpeningTag implements HtmlPart {
     public $part = 'Start';
     public $code = '';
     public $selfclosing = false;
+    public $parent = null;
 
     public $attributes = [];
 
@@ -68,6 +69,58 @@ class OpeningTag implements HtmlPart {
         }
 
         return true;
+    }
+
+    public function isRecursive($selector) {
+        $not = $selector === '!';
+        if($not) {
+            $selector = substr($selector, 1);
+        }
+        $found = $this->is($selector);
+        if($found) {
+            $found = true;
+        } else {
+            $parent = $this->getParent();
+            if(!$parent) {
+                $found = false;
+            } else {
+                $found = $parent->match($selector);
+            }
+        }
+        if($not) {
+            return !$found;
+        }
+        return $found;
+    }
+
+    public function match($conditions) {
+        if(is_string($conditions)) {
+            return $this->isRecursive($conditions);
+        }
+        foreach($conditions as $group) {
+            if(is_string($group)) {
+                $valid = $this->isRecursive($group);
+                if(!$valid) {
+                    return false;
+                }
+            } else {
+                $valid = false;
+                foreach($group as $element) {
+                    $valid = $this->isRecursive($element);
+                    if($valid) {
+                        break;
+                    }
+                }
+                if(!$valid) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public function getParent() {
+        return $this->parent;
     }
 
 }

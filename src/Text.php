@@ -7,6 +7,7 @@ class Text implements HtmlPart {
     public $type = 'text';
     public $code = '';
     public $search = [];
+    public $parent = null;
 
     public function getType() {
         return $this->type;
@@ -21,11 +22,19 @@ class Text implements HtmlPart {
             return $b[1][0] - $a[1][0];
         });
         foreach ($this->search as $value) {
-            $newText = call_user_func($replacer, $value[0], $value[2]['value']);
+            $newText = call_user_func($replacer, $value[0], $value[2]['value'], $this);
             $this->code = \substr($this->code, 0, $value[1][0]) . $newText . \substr($this->code, $value[1][0] + $value[1][1]);
         }
 
         $this->search = [];
+    }
+
+    public function getParent() {
+        return $this->parent;
+    }
+
+    public function match($options) {
+        return $this->getParent()->match($options);
     }
 
 }
