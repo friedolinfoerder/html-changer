@@ -33,8 +33,8 @@ class Text implements HtmlPart {
         return $this->parent;
     }
 
-    public function match($options) {
-        return $this->getParent()->match($options);
+    public function match($options, array $settings = []) {
+        return $this->getParent()->match($options, $settings);
     }
 
 }

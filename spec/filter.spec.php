@@ -68,4 +68,20 @@ describe('HtmlChanger', function() {
         expect($htmlChanger->html())->toBe('<div id="start"><span>[Test]</span></div>');
     });
 
+    it("can use match with multiple setting", function() {
+        $input = '<div id="start"><span>Test</span></div>';
+        $htmlChanger = HtmlChanger::parse($input, ['search' => [
+            'Test' => ['value' => 'Test'],
+        ]]);
+        $htmlChanger->replace(function($text, $value, $node) {
+            if($node->match(['#start', ['.not', 'span']], ['multiple' => true])) {
+                return "[$text]";
+            } else {
+                return $text;
+            }
+        });
+
+        expect($htmlChanger->html())->toBe('<div id="start"><span>[Test]</span></div>');
+    });
+
 });

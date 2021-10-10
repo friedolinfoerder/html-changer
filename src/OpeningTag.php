@@ -93,7 +93,21 @@ class OpeningTag implements HtmlPart {
         return $found;
     }
 
-    public function match($conditions) {
+    public function match($conditions, array $settings = []) {
+        if(array_key_exists('multiple', $settings) && $settings['multiple']) {
+            foreach($conditions as $rule) {
+                $result = $this->matchOne($rule);
+                if($result) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            return $this->matchOne($conditions);
+        }
+    }
+
+    private function matchOne($conditions) {
         if(is_string($conditions)) {
             return $this->isRecursive($conditions);
         }
